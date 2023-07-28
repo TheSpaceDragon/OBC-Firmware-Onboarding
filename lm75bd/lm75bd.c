@@ -27,9 +27,18 @@ error_code_t lm75bdInit(lm75bd_config_t *config) {
 }
 
 error_code_t readTempLM75BD(uint8_t devAddr, float *temp) {
-  /* Implement this driver function */
-  
-  return ERR_CODE_SUCCESS;
+    uint8_t accessBuffer = TEMP_REGISTER;
+    uint8_t readData[READ_BYTES];
+    i2cSendTo(devAddr, &accessBuffer, WRITE_BYTES);
+    i2cReceiveFrom(devAddr, readData, READ_BYTES);
+    int16_t processedTemp =  ((uint16_t)(readData[0]) << 3) | ((uint16_t)(readData[1]) >> 5);
+    if((readData[0] >> 7) == 0) *temp = processedTemp * 0.125;
+    else {
+        processedTemp |= 0xF800; // 1111 1xxx xxxx xxxx
+        *temp = processedTemp * 0.125;
+    }
+
+   return ERR_CODE_SUCCESS;
 }
 
 #define CONF_WRITE_BUFF_SIZE 2U
